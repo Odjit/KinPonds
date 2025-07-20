@@ -150,8 +150,10 @@ class PondCommands
     //[Command("pond droptable list", description: "Lists all available drop tables", adminOnly: true)]
     public static void PondDropTableList(ChatCommandContext ctx)
     {
-        ctx.Reply("<color=#DB8>Generating markdown droptables!");
-        var dropTables = new List<string>();
+        ctx.Reply("<color=#DB8>Generating markdown droptables for GitHub Wiki!");
+        var dropTables = new Dictionary<string, string>();
+        var indexEntries = new List<string>();
+
         var eqb = new EntityQueryBuilder(Allocator.Temp).
                   AddAll(ComponentType.ReadOnly<DropTableDataBuffer>()).
                   AddAll(ComponentType.ReadOnly<Prefab>()).
@@ -163,12 +165,22 @@ class PondCommands
         foreach (var dropTableEntity in dropTableEntities)
         {
             var sb = new StringBuilder();
-            var tableName = dropTableEntity.Read<PrefabGUID>().LookupName();
-            var prefabGuid = dropTableEntity.Read<PrefabGUID>().GuidHash;
+            var prefabCollectionSystem = Core.Server.GetExistingSystemManaged<PrefabCollectionSystem>();
+            var prefabGuid = dropTableEntity.Read<PrefabGUID>();
+            prefabCollectionSystem._PrefabLookupMap.TryGetName(prefabGuid, out var tableName);
+            var safeFileName = SanitizeFileName(tableName);
 
-            // Main drop table header with collapsible section
-            sb.AppendLine($"<details>");
-            sb.AppendLine($"<summary><strong>{tableName}</strong> <code>PrefabGuid({prefabGuid})</code></summary>");
+            // Create individual drop table page
+            sb.AppendLine($"# {tableName}");
+            sb.AppendLine();
+            sb.AppendLine("## Legend");
+            sb.AppendLine("- 🎲 **Drop Groups** - Contains nested drop tables");
+            sb.AppendLine("- 📦 **Items** - Individual items that can be dropped");
+            sb.AppendLine("- 👤 **Units** - Creatures/NPCs that can spawn");
+            sb.AppendLine("- **Percentage** - Drop chance/probability");
+            sb.AppendLine("- **Quantity** - Number of items/units");
+            sb.AppendLine();
+            sb.AppendLine("---");
             sb.AppendLine();
 
             var dropTableDataBuffer = Core.EntityManager.GetBuffer<DropTableDataBuffer>(dropTableEntity);
@@ -176,55 +188,67 @@ class PondCommands
             {
                 if (entry.ItemType == DropItemType.Group)
                 {
-                    sb.AppendLine($"- **{(entry.DropRate * 100):F1}%** 🎲 **{entry.Quantity}x Group** - `{entry.ItemGuid.LookupName()}`");
+                    sb.AppendLine($"- **{(entry.DropRate * 100):F1}%** 🎲 **{entry.Quantity}x** - `{entry.ItemGuid.LookupName()}`");
                     ProcessDropGroupMarkdown(sb, entry.ItemGuid, 1);
                 }
                 else if (entry.ItemType == DropItemType.Unit)
                 {
-                    sb.AppendLine($"- **{(entry.DropRate * 100):F1}%** 👤 **{entry.Quantity}x Unit** - *'{entry.ItemGuid.PrefabName()}'* `{entry.ItemGuid.LookupName()}`");
+                    sb.AppendLine($"- **{(entry.DropRate * 100):F1}%** 👤 **{entry.Quantity}x** - *{entry.ItemGuid.PrefabName()}* `{entry.ItemGuid.LookupName()}`");
                 }
                 else
                 {
-                    sb.AppendLine($"- **{(entry.DropRate * 100):F1}%** 📦 **{entry.Quantity}x Item** - *'{entry.ItemGuid.PrefabName()}'* `{entry.ItemGuid.LookupName()}`");
+                    sb.AppendLine($"- **{(entry.DropRate * 100):F1}%** 📦 **{entry.Quantity}x** - *{entry.ItemGuid.PrefabName()}* `{entry.ItemGuid.LookupName()}`");
                 }
             }
 
-            sb.AppendLine();
-            sb.AppendLine("</details>");
-            sb.AppendLine();
-
-            dropTables.Add(sb.ToString());
+            dropTables[safeFileName] = sb.ToString();
+            indexEntries.Add($"- [{tableName}]({safeFileName})");
         }
 
         dropTableEntities.Dispose();
-        dropTables.Sort();
 
-        // Create the full markdown document
-        var markdownContent = new StringBuilder();
-        markdownContent.AppendLine("# VRising Drop Tables");
-        markdownContent.AppendLine();
-        markdownContent.AppendLine("This document contains all drop tables and their hierarchical structures in VRising.");
-        markdownContent.AppendLine();
-        markdownContent.AppendLine("## Legend");
-        markdownContent.AppendLine("- 🎲 **Drop Group** - Contains nested drop tables");
-        markdownContent.AppendLine("- 📦 **Item** - Individual items that can be dropped");
-        markdownContent.AppendLine("- 👤 **Unit** - Creatures/NPCs that can spawn");
-        markdownContent.AppendLine("- **Percentage** - Drop chance/probability");
-        markdownContent.AppendLine("- **Quantity** - Number of items/units");
-        markdownContent.AppendLine();
-        markdownContent.AppendLine("---");
-        markdownContent.AppendLine();
+        // Sort index entries alphabetically
+        indexEntries.Sort();
 
-        markdownContent.Append(string.Join("", dropTables));
+        // Create the index page
+        var indexContent = new StringBuilder();
+        indexContent.AppendLine("# VRising Drop Tables Index");
+        indexContent.AppendLine();
+        indexContent.AppendLine("This is the main index for all VRising drop tables. Click on any drop table name to view its details.");
+        indexContent.AppendLine();
+        indexContent.AppendLine($"**Total Drop Tables:** {dropTables.Count}");
+        indexContent.AppendLine();
+        indexContent.AppendLine("## Drop Tables");
+        indexContent.AppendLine();
+
+        foreach (var entry in indexEntries)
+        {
+            indexContent.AppendLine(entry);
+        }
 
         try
         {
-            File.WriteAllText("dropTables.md", markdownContent.ToString());
-            ctx.Reply($"Drop tables written to dropTables.md ({dropTables.Count} tables processed)");
+            // Create wiki directory if it doesn't exist
+            var wikiDir = "wiki";
+            if (!Directory.Exists(wikiDir))
+            {
+                Directory.CreateDirectory(wikiDir);
+            }
+
+            // Write index page
+            File.WriteAllText(Path.Combine(wikiDir, "Drop-Tables.md"), indexContent.ToString());
+
+            // Write individual drop table pages
+            foreach (var kvp in dropTables)
+            {
+                File.WriteAllText(Path.Combine(wikiDir, $"{kvp.Key}.md"), kvp.Value);
+            }
+
+            ctx.Reply($"Wiki generated successfully! Index: Drop-Tables.md, {dropTables.Count} individual pages created in 'wiki' folder");
         }
         catch (Exception ex)
         {
-            ctx.Reply($"Failed to write file: {ex.Message}");
+            ctx.Reply($"Failed to write files: {ex.Message}");
         }
     }
 
@@ -239,16 +263,14 @@ class PondCommands
             totalWeight += entry.Weight;
         }
 
-        // Create nested collapsible section for drop groups
+        // Create collapsible section for ALL drop groups
         var indent = new string(' ', level * 2);
-        var hasNestedGroups = dropGroupBuffer.AsNativeArray().ToArray().Any(entry => entry.Type == DropItemType.Group);
+        var groupName = dropGroupPrefab.LookupName();
+        var itemCount = dropGroupBuffer.Length;
 
-        if (hasNestedGroups)
-        {
-            sb.AppendLine($"{indent}<details>");
-            sb.AppendLine($"{indent}<summary>📂 <strong>Nested Drop Groups</strong></summary>");
-            sb.AppendLine();
-        }
+        sb.AppendLine($"{indent}<details>");
+        sb.AppendLine($"{indent}<summary>📂 <strong>{groupName}</strong> ({itemCount} entries)</summary>");
+        sb.AppendLine();
 
         foreach (var entry in dropGroupBuffer)
         {
@@ -256,24 +278,54 @@ class PondCommands
 
             if (entry.Type == DropItemType.Group)
             {
-                sb.AppendLine($"{indent}- **{percentage:F1}%** 🎲 **{entry.Quantity}x Group** - `{entry.DropItemPrefab.LookupName()}`");
+                sb.AppendLine($"{indent}- **{percentage:F1}%** 🎲 **{entry.Quantity}x** - `{entry.DropItemPrefab.LookupName()}`");
                 ProcessDropGroupMarkdown(sb, entry.DropItemPrefab, level + 1);
             }
             else if (entry.Type == DropItemType.Unit)
             {
-                sb.AppendLine($"{indent}- **{percentage:F1}%** 👤 **{entry.Quantity}x Unit** - *'{entry.DropItemPrefab.PrefabName()}'* `{entry.DropItemPrefab.LookupName()}`");
+                sb.AppendLine($"{indent}- **{percentage:F1}%** 👤 **{entry.Quantity}x** - *{entry.DropItemPrefab.PrefabName()}* `{entry.DropItemPrefab.LookupName()}`");
             }
             else
             {
-                sb.AppendLine($"{indent}- **{percentage:F1}%** 📦 **{entry.Quantity}x Item** - *'{entry.DropItemPrefab.PrefabName()}'* `{entry.DropItemPrefab.LookupName()}`");
+                sb.AppendLine($"{indent}- **{percentage:F1}%** 📦 **{entry.Quantity}x** - *{entry.DropItemPrefab.PrefabName()}* `{entry.DropItemPrefab.LookupName()}`");
             }
         }
 
-        if (hasNestedGroups)
+        sb.AppendLine();
+        sb.AppendLine($"{indent}</details>");
+        sb.AppendLine();
+    }
+
+    static string SanitizeFileName(string fileName)
+    {
+        // Remove or replace invalid characters for file names and GitHub wiki URLs
+        var sanitized = fileName
+            .Replace(" ", "-")
+            .Replace("_", "-")
+            .Replace("(", "")
+            .Replace(")", "")
+            .Replace("[", "")
+            .Replace("]", "")
+            .Replace("{", "")
+            .Replace("}", "")
+            .Replace(":", "")
+            .Replace(";", "")
+            .Replace("\"", "")
+            .Replace("'", "")
+            .Replace("/", "-")
+            .Replace("\\", "-")
+            .Replace("?", "")
+            .Replace("*", "")
+            .Replace("<", "")
+            .Replace(">", "")
+            .Replace("|", "-");
+
+        // Remove multiple consecutive dashes and trim
+        while (sanitized.Contains("--"))
         {
-            sb.AppendLine();
-            sb.AppendLine($"{indent}</details>");
-            sb.AppendLine();
+            sanitized = sanitized.Replace("--", "-");
         }
+
+        return sanitized.Trim('-');
     }
 }
