@@ -1,5 +1,4 @@
 using ProjectM;
-using ProjectM.Terrain;
 using Stunlock.Core;
 using System;
 using System.Collections.Generic;
@@ -39,7 +38,7 @@ internal class DropTableParameterConverter : CommandArgumentConverter<DropTableP
             if (!prefabEntity.Has<DropTableDataBuffer>()) continue;
 
             var prefabGuid = dropTableEntity.Read<PrefabGUID>();
-            var name = prefabGuid.LookupName();
+            Core.PrefabCollectionSystem._PrefabLookupMap.TryGetName(prefabGuid, out var name);
             dropTableCache[name] = prefabGuid;
             var ingameName = Core.Localization.GetPrefabName(prefabGuid);
             if (!string.IsNullOrEmpty(ingameName))
@@ -51,6 +50,9 @@ internal class DropTableParameterConverter : CommandArgumentConverter<DropTableP
 
     public override DropTableParameter Parse(ICommandContext ctx, string input)
 	{
+        if (input.ToLowerInvariant() == "clear")
+            return new DropTableParameter(PrefabGUID.Empty);
+
         InitializeDropTableCache();
         if (int.TryParse(input, out var integral))
 		{
@@ -61,9 +63,6 @@ internal class DropTableParameterConverter : CommandArgumentConverter<DropTableP
 
 		var dtAdded = "DT_" + input;
 		if (TryGet(dtAdded, out result)) return result;
-
-        var dgAdded = "DG_" + input;
-        if (TryGet(dtAdded, out result)) return result;
 
         Dictionary<PrefabGUID, List<string>> searchResults = [];
 		foreach (var (name, prefabGuid) in dropTableCache)

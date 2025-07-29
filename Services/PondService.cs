@@ -266,7 +266,7 @@ class PondService
 
             if (inventoryEntity == Entity.Null || !InventoryUtilitiesServer.TryRemoveItem(Core.EntityManager, inventoryEntity, pondCostItem, PondCostAmount.Value))
             {
-                return $"You must have {Format.Color(PondCostAmount.Value.ToString(), Color.White)}x {Format.Color(pondCostItem.PrefabName(),Color.Yellow)} in your inventory to move a servant between castles.";
+                return $"You must have {Format.Color(PondCostAmount.Value.ToString(), Color.White)}x {Format.Color(pondCostItem.PrefabName(),Color.Yellow)} in your inventory to create a pond.";
             }
         }
 

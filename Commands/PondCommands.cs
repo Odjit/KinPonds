@@ -5,7 +5,6 @@ using Stunlock.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using Unity.Collections;
 using Unity.Entities;
@@ -34,14 +33,14 @@ class PondCommands
         }
         else
         {
-            ctx.Reply("<b><color=red>><(((*> <color=#DB8>The fish gods deny your request: " + result);
+            ctx.Reply("<b><color=red>><(((*> <color=#DB8>The invocation was flawed: " + result);
         }
     }
     static readonly string[] PondCreatedMessages = new[]
 {
     "Something now stirs in your pond.",
     "The pond waters ripple with dark promise.",
-    "Home Fishin’: what bites here may bite back.",
+    "Home fishin’: what bites here may bite back.",
     "Well, it’s not empty anymore.",
     "The pond accepts your offering."
 };
@@ -93,25 +92,17 @@ class PondCommands
         ctx.Reply("<color=#DB8>Cleared pond creation cost.");
     }
 
-    [Command("pond droptable", description: "Sets the drop table for fish in ponds", adminOnly: true)]
+    [Command("pond droptable", description: "Sets the drop table for fish in ponds (use clear to reset to defaults)", adminOnly: true)]
     public static void PondDropTableSet(ChatCommandContext ctx, DropTableParameter dropTable)
     {
         Core.Ponds.SetDropTable(dropTable.Value);
         if (dropTable.Value == PrefabGUID.Empty)
         {
-            ctx.Reply("<color=#DB8>Cleared pond drop table.");
+            ctx.Reply("<color=#DB8>Cleared pond drop table and restored to defaults.");
             return;
         }
         ctx.Reply($"<color=#DB8>Set pond drop table to {Format.Color(dropTable.Value.PrefabName(), Color.White)}.");
     }
-
-    [Command("pond droptable clear", description: "Clears the drop table for fish in ponds", adminOnly: true)]
-    public static void PondDropTableClear(ChatCommandContext ctx)
-    {
-        Core.Ponds.SetDropTable(PrefabGUID.Empty);
-        ctx.Reply("<color=#DB8>Cleared pond drop table.");
-    }
-
 
     [Command("pond setdrop", description: "Sets the drop table for fish in the target pond", adminOnly: true)]
     public static void PondSetDropTable(ChatCommandContext ctx, DropTableParameter dropTable)
@@ -127,16 +118,16 @@ class PondCommands
         Core.Ponds.SetPondOverrideDropTable(pond, dropTable.Value);
         if (dropTable.Value == PrefabGUID.Empty)
         {
-            ctx.Reply("<color=#DB8>Cleared pond drop table.");
+            ctx.Reply("<color=#DB8>Cleared this pond's drop table and restored it to defaults.");
             return;
         }
-        ctx.Reply($"<color=#DB8>Set pond drop table to {Format.Color(dropTable.Value.PrefabName(), Color.White)}.");
+        ctx.Reply($"<color=#DB8>Set this pond's drop table to {Format.Color(dropTable.Value.PrefabName(), Color.White)}.");
     }
 
     [Command("pond limit", description: "Get the current pond limit.")]
     public static void PondLimitSet(ChatCommandContext ctx)
     {
-        ctx.Reply($"<color=#DB8>Maximum of <color=#fff>{PondService.TerritoryLimit.Value}</color> per territory.");
+        ctx.Reply($"<color=#DB8>Maximum of <color=#fff>{PondService.TerritoryLimit.Value}</color> pond{(PondService.TerritoryLimit.Value > 1 ? "s" : "")} per territory.");
     }
 
     [Command("pond limit", description: "Sets the maximum number of ponds allowed per territory. -1 for unlimited.", adminOnly: true)]
@@ -147,8 +138,8 @@ class PondCommands
         ctx.Reply($"<color=#DB8>Set maximum ponds per territory to <color=#0CD>{(limit<0 ? "unlimited" : limit)}</color>.");
     }
 
-    //[Command("pond droptable list", description: "Lists all available drop tables", adminOnly: true)]
-    public static void PondDropTableList(ChatCommandContext ctx)
+    //[Command("pond generatewiki", description: "Generates wiki of all the droptables", adminOnly: true)]
+    public static void GenerateWiki(ChatCommandContext ctx)
     {
         ctx.Reply("<color=#DB8>Generating markdown droptables for GitHub Wiki!");
         var dropTables = new Dictionary<string, string>();
@@ -171,7 +162,7 @@ class PondCommands
             var safeFileName = SanitizeFileName(tableName);
 
             // Create individual drop table page
-            sb.AppendLine($"# {tableName}");
+            sb.AppendLine($"# {tableName} ({prefabGuid._Value})");
             sb.AppendLine();
             sb.AppendLine("## Legend");
             sb.AppendLine("- 🎲 **Drop Groups** - Contains nested drop tables");
@@ -202,7 +193,7 @@ class PondCommands
             }
 
             dropTables[safeFileName] = sb.ToString();
-            indexEntries.Add($"- [{tableName}]({safeFileName})");
+            indexEntries.Add($"- [{tableName} ({prefabGuid._Value})]({safeFileName})");
         }
 
         dropTableEntities.Dispose();
