@@ -51,7 +51,7 @@ class PondCommands
         return $"<size=10><b><color=#0CD>><(((*></b></size> <color=#DB8>{msg}";
     }
 
-    [Command("pond info", description:"See pond settings. Mouse over a pond to read it's droptable.", adminOnly: true)]
+    [Command("pond info", description:"See pond settings. Mouse over a pond to read it's droptable.")]
     public static void PondInfo(ChatCommandContext ctx)
     {
         var aimPos = ctx.Event.SenderCharacterEntity.Read<EntityAimData>().AimPosition;
@@ -60,6 +60,8 @@ class PondCommands
         string dropTableInfo;
         var globalDropTable = Core.Ponds.GetGlobalDropTable();
         var hasOverride = Core.Ponds.HasPondOverrideDropTable(closestPool);
+        var amount = PondService.PondCostAmount.Value;
+        var item = PondService.PondCostItemGuid.Value;
 
         if (closestPool == Entity.Null || !hasOverride)
         {
@@ -78,7 +80,11 @@ class PondCommands
             dropTableInfo = $"Override Drop table: <color=#0CD>{overrideDropTable.PrefabName()}</color>";
         }
        
-        ctx.Reply($"<color=#DB8><size=17><u>Pond Settings</u>:</size>\nPonds refill every <color=#0CD>{PondService.RespawnTimeMin.Value}</color>–<color=#0CD>{PondService.RespawnTimeMax.Value}</color> seconds.\nMax <color=#0CD>{(PondService.TerritoryLimit.Value == -1 ? "unlimited" : PondService.TerritoryLimit.Value.ToString())}</color> pond{(PondService.TerritoryLimit.Value != 1 ? "s" : "")} per territory.\n{dropTableInfo}");
+        var costDisplay = amount > 0 && item != 0 
+            ? $"Cost: {Format.Color(amount.ToString(), Color.Cyan)}x {Format.Color(new PrefabGUID(item).PrefabName(), Color.Cyan)}" 
+            : "Cost: <color=#0CD>Free</color>";
+
+        ctx.Reply($"<color=#DB8><size=17><u>Pond Settings</u>:</size>\nPonds refill every <color=#0CD>{PondService.RespawnTimeMin.Value}</color>–<color=#0CD>{PondService.RespawnTimeMax.Value}</color> seconds.\nMax <color=#0CD>{(PondService.TerritoryLimit.Value == -1 ? "unlimited" : PondService.TerritoryLimit.Value.ToString())}</color> pond{(PondService.TerritoryLimit.Value != 1 ? "s" : "")} per territory. \n{costDisplay} \n{dropTableInfo}");
     }
 
     [Command("pond respawn", adminOnly: true)]

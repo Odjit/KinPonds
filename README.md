@@ -24,11 +24,11 @@ Feel free to reach out to us on discord (odjit or zfolmt) if you have any questi
 - `.pond`
   - Converts the nearest pool into a fishing pond. Must be standing near a decorative pool.
   - May require items if pond creation cost is configured by admin.
+- `.pond info`
+  - Shows the current pond settings including respawn time, drop table, and territory limit.
 
 
 ### Admin Commands
-- `.pond info`
-  - Shows the current pond settings including respawn time, drop table, and item cost.
 - `.pond respawn (minTime) (maxTime)`
   - Sets the minimum and maximum time between fish respawns in seconds.
 - `.pond cost (item) (amount)`
