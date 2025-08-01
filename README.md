@@ -1,7 +1,11 @@
 ![](logo.png)
 # KinPonds for V Rising
-KinPonds is a fishing enhancement mod for V Rising that allows players to transform decorative pools (Eternal Dominance DLC req) into functional fishing ponds. Create your own fishing spots and customize the fishing experience on your server.
+KinPonds is a fishing enhancement mod for V Rising that allows players to transform decorative pools (Eternal Dominance DLC req) and water wells into functional fishing ponds. Create your own fishing spots and customize the fishing experience on your server.
 
+![waterwell01](https://github.com/user-attachments/assets/79f1bf63-31ce-4763-a2ea-499ceb834aa5)
+![waterwell03](https://github.com/user-attachments/assets/6c93e084-6293-4657-b1cd-c13fb8572d1b)
+![Pool01](https://github.com/user-attachments/assets/57385287-b7a7-400f-971b-183939afd000)
+![Pool02](https://github.com/user-attachments/assets/81474616-471d-4c51-9c5e-836455048b4c)
 ---
 
 Thanks to the V Rising modding and server communities for ideas and requests!
@@ -11,7 +15,7 @@ Feel free to reach out to us on discord (odjit or zfolmt) if you have any questi
 
 ## Features
 
-- **Transform Pools into Ponds**: Convert decorative castle pools into functional fishing spots
+- **Transform Pools into Ponds**: Convert decorative castle pools and water wells into functional fishing spots
 - **Regional Fish Types**: Ponds automatically use region-appropriate fish based on their location
 - **Selectable Drop Tables**: Admins can choose loot tables for ponds
 - **Configurable Costs**: Set item requirements for pond creation
@@ -22,7 +26,7 @@ Feel free to reach out to us on discord (odjit or zfolmt) if you have any questi
 
 ### Player Commands
 - `.pond`
-  - Converts the nearest pool into a fishing pond. Must be standing near a decorative pool.
+  - Converts the nearest pool into a fishing pond. Must be standing near a decorative pool or water well.
   - May require items if pond creation cost is configured by admin.
 - `.pond info`
   - Shows the current pond settings including respawn time, drop table, and territory limit.
