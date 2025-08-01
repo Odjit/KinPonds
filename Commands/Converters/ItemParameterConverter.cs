@@ -1,8 +1,9 @@
+using ProjectM;
+using Stunlock.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Stunlock.Core;
 using Unity.Collections;
 using VampireCommandFramework;
 
@@ -36,11 +37,19 @@ internal class ItemParameterConverter : CommandArgumentConverter<ItemParameter>
 
     public override ItemParameter Parse(ICommandContext ctx, string input)
 	{
+        if (input.ToLowerInvariant() == "clear")
+            return new ItemParameter(PrefabGUID.Empty);
+
         InitializeItemCache();
         if (int.TryParse(input, out var integral))
 		{
-			return new ItemParameter(new(integral));
-		}
+            var prefabGuid = new PrefabGUID(integral);
+            if (!Core.PrefabCollectionSystem._PrefabLookupMap.TryGetValue(prefabGuid, out var prefab))
+                throw ctx.Error($"Invalid item prefabId: {input}");
+            if (!prefab.Has<ItemData>())
+                throw ctx.Error($"Not an item prefabId: {prefabGuid.LookupName()}");
+            return new ItemParameter(prefabGuid);
+        }
 
 		if (TryGet(input, out var result)) return result;
 

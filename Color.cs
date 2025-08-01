@@ -10,4 +10,5 @@ public static class Color
 	public static string DarkGreen = "#0c0";
 	public static string Command = "#40E0D0";
     public static string Orange = "orange";
+    public static string Cyan = "#0CD";
 }

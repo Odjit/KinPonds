@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>KinPonds</AssemblyName>
-    <Description>Allows admin commands to be assigned to groups which can be assigned to nonadmins</Description>
+    <Description>A pond to call your own.</Description>
     <Version>1.0.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>

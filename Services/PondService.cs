@@ -65,10 +65,10 @@ class PondService
         PondCostAmount = config.Bind("Pond Creation", "PondCostAmount", 0, 
             "Amount of the item required to create a pondEntity. Set to 0 to disable cost.");
 
-        RespawnTimeMin = config.Bind("Fish Respawn", "RespawnTimeMin", 15f, 
+        RespawnTimeMin = config.Bind("Fish Respawn", "RespawnTimeMin", 180f, 
             "Minimum time in seconds before a fish respawns after being caught");
         
-        RespawnTimeMax = config.Bind("Fish Respawn", "RespawnTimeMax", 45f, 
+        RespawnTimeMax = config.Bind("Fish Respawn", "RespawnTimeMax", 600f, 
             "Maximum time in seconds before a fish respawns after being caught");
 
         DropTable = config.Bind("Fish DropTable", "DropTable", 0);
@@ -338,6 +338,40 @@ class PondService
         }
     }
 
+    internal PrefabGUID GetOverrideDropTable(Entity pondEntity)
+    {
+        if (pondEntity == Entity.Null) return PrefabGUID.Empty;
+        if (pondEntity.Has<DropTableBuffer>())
+        {
+            var dropTableBuffer = Core.EntityManager.GetBuffer<DropTableBuffer>(pondEntity);
+            if (dropTableBuffer.Length > 0)
+            {
+                return dropTableBuffer[0].DropTableGuid;
+            }
+        }
+        return GetDropTableToUse(pondEntity.Read<Translation>().Value);
+    }
+
+    internal PrefabGUID GetGlobalDropTable()
+    {
+        if (dropTable != PrefabGUID.Empty)
+        {
+            return dropTable;
+        }
+        return PrefabGUID.Empty;
+    }
+
+    internal bool HasPondOverrideDropTable(Entity pondEntity)
+    {
+        if (pondEntity == Entity.Null) return false;
+        if (pondEntity.Has<DropTableBuffer>())
+        {
+            var dropTableBuffer = Core.EntityManager.GetBuffer<DropTableBuffer>(pondEntity);
+            return dropTableBuffer.Length > 0 && dropTableBuffer[0].DropTableGuid != PrefabGUID.Empty;
+        }
+        return false;
+    }
+
     internal void SetPondOverrideDropTable(Entity pondEntity, PrefabGUID newDropTable)
     {
         if (newDropTable == PrefabGUID.Empty)
@@ -402,7 +436,6 @@ class PondService
 
         var waitFor = UnityEngine.Random.RandomRange(RespawnTimeMin.Value, RespawnTimeMax.Value);
 
-        Core.Log.LogInfo($"Respawning fish for pondEntity in {waitFor} seconds");
         Core.StartCoroutine(SpawnFishIn(pondEntity, waitFor));
     }
 

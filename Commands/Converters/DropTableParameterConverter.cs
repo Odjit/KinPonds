@@ -55,14 +55,19 @@ internal class DropTableParameterConverter : CommandArgumentConverter<DropTableP
 
         InitializeDropTableCache();
         if (int.TryParse(input, out var integral))
-		{
-			return new DropTableParameter(new(integral));
-		}
+        {
+            var prefabGuid = new PrefabGUID(integral);
+            if (!Core.PrefabCollectionSystem._PrefabLookupMap.TryGetValue(prefabGuid, out var prefab))
+                throw ctx.Error($"Invalid drop table prefabId: {input}");
+            if (!prefab.Has<DropTableDataBuffer>())
+                throw ctx.Error($"Not a drop table prefabId: {prefabGuid.LookupName()}");
+            return new DropTableParameter(prefabGuid);
+        }
 
-		if (TryGet(input, out var result)) return result;
+        if (TryGet(input, out var result)) return result;
 
-		var dtAdded = "DT_" + input;
-		if (TryGet(dtAdded, out result)) return result;
+        var dtAdded = "DT_" + input;
+        if (TryGet(dtAdded, out result)) return result;
 
         Dictionary<PrefabGUID, List<string>> searchResults = [];
 		foreach (var (name, prefabGuid) in dropTableCache)
@@ -190,7 +195,7 @@ internal class DropTableParameterConverter : CommandArgumentConverter<DropTableP
             throw ctx.Error(sb.ToString());
         }
 
-		throw ctx.Error($"Invalid drop table/group id: {input}");
+		throw ctx.Error($"Invalid drop table id: {input}");
 	}
 
 	private static bool TryGet(string input, out DropTableParameter item)

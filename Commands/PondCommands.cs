@@ -37,13 +37,13 @@ class PondCommands
         }
     }
     static readonly string[] PondCreatedMessages = new[]
-{
-    "Something now stirs in your pond.",
-    "The pond waters ripple with dark promise.",
-    "Home fishin’: what bites here may bite back.",
-    "Well, it’s not empty anymore.",
-    "The pond accepts your offering."
-};
+    {
+        "Something now stirs in your pond.",
+        "The pond waters ripple with dark promise.",
+        "Home fishin’: what bites here may bite back.",
+        "Well, it’s not empty anymore.",
+        "The pond accepts your offering."
+    };
 
     public static string RandomPondSuccess()
     {
@@ -51,10 +51,34 @@ class PondCommands
         return $"<size=10><b><color=#0CD>><(((*></b></size> <color=#DB8>{msg}";
     }
 
-    [Command("pond respawn")]
-    public static void PondRespawn(ChatCommandContext ctx)
+    [Command("pond info", description:"See pond settings. Mouse over a pond to read it's droptable.", adminOnly: true)]
+    public static void PondInfo(ChatCommandContext ctx)
     {
-        ctx.Reply($"<color=#DB8>Current time between fish respawns is <color=#0CD>{PondService.RespawnTimeMin.Value}</color> to <color=#0CD>{PondService.RespawnTimeMax.Value}</color> seconds.");
+        var aimPos = ctx.Event.SenderCharacterEntity.Read<EntityAimData>().AimPosition;
+        var closestPool = FindClosestPool(aimPos);
+
+        string dropTableInfo;
+        var globalDropTable = Core.Ponds.GetGlobalDropTable();
+        var hasOverride = Core.Ponds.HasPondOverrideDropTable(closestPool);
+
+        if (closestPool == Entity.Null || !hasOverride)
+        {
+            if (globalDropTable != PrefabGUID.Empty)
+            {
+                dropTableInfo = $"Global Drop table: <color=#0CD>{globalDropTable.PrefabName()}</color>";
+            }
+            else
+            {
+                dropTableInfo = "Global Drop table: <color=#0CD>Regional default</color>";
+            }
+        }
+        else
+        {
+            var overrideDropTable = Core.Ponds.GetOverrideDropTable(closestPool);
+            dropTableInfo = $"Override Drop table: <color=#0CD>{overrideDropTable.PrefabName()}</color>";
+        }
+       
+        ctx.Reply($"<color=#DB8><size=17><u>Pond Settings</u>:</size>\nPonds refill every <color=#0CD>{PondService.RespawnTimeMin.Value}</color>–<color=#0CD>{PondService.RespawnTimeMax.Value}</color> seconds.\nMax <color=#0CD>{(PondService.TerritoryLimit.Value == -1 ? "unlimited" : PondService.TerritoryLimit.Value.ToString())}</color> pond{(PondService.TerritoryLimit.Value != 1 ? "s" : "")} per territory.\n{dropTableInfo}");
     }
 
     [Command("pond respawn", adminOnly: true)]
@@ -76,23 +100,32 @@ class PondCommands
         ctx.Reply($"<color=#DB8>Set time between fish respawns to <color=#0CD>{minTime}</color> to <color=#0CD>{maxTime}</color> seconds.");
     }
 
-    [Command("pond cost", description: "Sets the cost of adding a fishing pond to a pool", adminOnly: true)]
-    public static void PondCostSet(ChatCommandContext ctx, ItemParameter item, int amount)
+    [Command("pond cost", description: "Sets the cost of adding a fishing pond to a pool, or clears cost if no parameters given", adminOnly: true)]
+    public static void PondCostSet(ChatCommandContext ctx, ItemParameter item = default, int amount = 0)
     {
+        if (item == null || item.Value.GuidHash == 0)
+        {
+            PondService.PondCostItemGuid.Value = PrefabGUID.Empty.GuidHash;
+            PondService.PondCostAmount.Value = 0;
+            ctx.Reply("<color=#DB8>Cleared pond creation cost. Ponds are now <color=#0CD>free</color> to create.");
+            return;
+        }
+
         PondService.PondCostItemGuid.Value = item.Value.GuidHash;
         PondService.PondCostAmount.Value = amount;
-        ctx.Reply($"<color=#DB8>Set pond creation cost to {Format.Color(amount.ToString(), Color.White)}x {Format.Color(item.Value.PrefabName(), Color.Yellow)}. Set to 0 to disable cost.");
+        if (amount < 0)
+        {
+            ctx.Reply("<color=#DB8>Cost cannot be negative. Set to 0 to clear cost.");
+            return;
+        }
+        if (amount == 0)
+        {
+            PondService.PondCostItemGuid.Value = PrefabGUID.Empty.GuidHash;
+        }
+        ctx.Reply($"<color=#DB8>Set pond creation cost to {Format.Color(amount.ToString(), Color.Cyan)}x {Format.Color(item.Value.PrefabName(), Color.Yellow)}. Set to 0 to clear cost.");
     }
 
-    [Command("pond cost clear", description: "Clears the cost of adding a fishing pond to a pool", adminOnly: true)]
-    public static void PondCostClear(ChatCommandContext ctx)
-    {
-        PondService.PondCostItemGuid.Value = PrefabGUID.Empty.GuidHash;
-        PondService.PondCostAmount.Value = 0;
-        ctx.Reply("<color=#DB8>Cleared pond creation cost.");
-    }
-
-    [Command("pond droptable", description: "Sets the drop table for fish in ponds (use clear to reset to defaults)", adminOnly: true)]
+    [Command("pond globaldrop", description: "Sets the drop table for fish in ponds (use clear to reset to defaults)", adminOnly: true)]
     public static void PondDropTableSet(ChatCommandContext ctx, DropTableParameter dropTable)
     {
         Core.Ponds.SetDropTable(dropTable.Value);
@@ -101,10 +134,10 @@ class PondCommands
             ctx.Reply("<color=#DB8>Cleared pond drop table and restored to defaults.");
             return;
         }
-        ctx.Reply($"<color=#DB8>Set pond drop table to {Format.Color(dropTable.Value.PrefabName(), Color.White)}.");
+        ctx.Reply($"<color=#DB8>Set pond drop table to {Format.Color(dropTable.Value.PrefabName(), Color.Cyan)}.");
     }
 
-    [Command("pond setdrop", description: "Sets the drop table for fish in the target pond", adminOnly: true)]
+    [Command("pond override", description: "Sets the drop table for fish in the target pond, excluding it from global settings.", adminOnly: true)]
     public static void PondSetDropTable(ChatCommandContext ctx, DropTableParameter dropTable)
     {
         var aimPos = ctx.Event.SenderCharacterEntity.Read<EntityAimData>().AimPosition;
@@ -121,13 +154,7 @@ class PondCommands
             ctx.Reply("<color=#DB8>Cleared this pond's drop table and restored it to defaults.");
             return;
         }
-        ctx.Reply($"<color=#DB8>Set this pond's drop table to {Format.Color(dropTable.Value.PrefabName(), Color.White)}.");
-    }
-
-    [Command("pond limit", description: "Get the current pond limit.")]
-    public static void PondLimitSet(ChatCommandContext ctx)
-    {
-        ctx.Reply($"<color=#DB8>Maximum of <color=#fff>{PondService.TerritoryLimit.Value}</color> pond{(PondService.TerritoryLimit.Value > 1 ? "s" : "")} per territory.");
+        ctx.Reply($"<color=#DB8>Set this pond's drop table to {Format.Color(dropTable.Value.PrefabName(), Color.Cyan)}.");
     }
 
     [Command("pond limit", description: "Sets the maximum number of ponds allowed per territory. -1 for unlimited.", adminOnly: true)]
