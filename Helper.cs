@@ -12,6 +12,8 @@ class Helper
     internal static PrefabGUID TM_Castle_ObjectDecor_Pool_StrongbladeDLC01 = new PrefabGUID(558668025);
     internal static PrefabGUID TM_Castle_ObjectDecor_Pool_StrongbladeDLC02 = new PrefabGUID(-1963794511);
     internal static PrefabGUID Char_Fish_General = new PrefabGUID(1559481073);
+    internal static PrefabGUID TM_LiquidStation_Water_Well01 = new PrefabGUID(986517450);
+    internal static PrefabGUID TM_LiquidStation_Water_Well03 = new PrefabGUID(1742891933);
 
     public static Entity FindClosestPool(Vector3 pos)
     {
@@ -32,7 +34,9 @@ class Helper
             if (!entity.Has<Translation>()) continue;
             var prefabGuid = entity.Read<PrefabGUID>();
             if (prefabGuid != TM_Castle_ObjectDecor_Pool_StrongbladeDLC01 &&
-                prefabGuid != TM_Castle_ObjectDecor_Pool_StrongbladeDLC02)
+                prefabGuid != TM_Castle_ObjectDecor_Pool_StrongbladeDLC02 &&
+                prefabGuid != TM_LiquidStation_Water_Well01 &&
+                prefabGuid != TM_LiquidStation_Water_Well03) 
             {
                 continue;
             }

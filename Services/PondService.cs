@@ -106,7 +106,9 @@ class PondService
         {
             var prefabGuid = entity.Read<PrefabGUID>();
             if (prefabGuid != Helper.TM_Castle_ObjectDecor_Pool_StrongbladeDLC01 &&
-                prefabGuid != Helper.TM_Castle_ObjectDecor_Pool_StrongbladeDLC02)
+                prefabGuid != Helper.TM_Castle_ObjectDecor_Pool_StrongbladeDLC02 &&
+                prefabGuid != Helper.TM_LiquidStation_Water_Well01 &&
+                prefabGuid != Helper.TM_LiquidStation_Water_Well03)
             {
                 continue;
             }
@@ -231,7 +233,9 @@ class PondService
 
         var prefabGuid = pondEntity.Read<PrefabGUID>();
         if (prefabGuid != Helper.TM_Castle_ObjectDecor_Pool_StrongbladeDLC01 &&
-            prefabGuid != Helper.TM_Castle_ObjectDecor_Pool_StrongbladeDLC02)
+            prefabGuid != Helper.TM_Castle_ObjectDecor_Pool_StrongbladeDLC02 &&
+                prefabGuid != Helper.TM_LiquidStation_Water_Well01 &&
+                prefabGuid != Helper.TM_LiquidStation_Water_Well03)
         {
             return "Not a pool";
         }

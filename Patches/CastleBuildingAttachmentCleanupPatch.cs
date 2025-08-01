@@ -20,7 +20,9 @@ static class CastleBuildingAttachmentCleanupPatch
         {
             var prefabGuid = entity.Read<PrefabGUID>();
             if (prefabGuid != Helper.TM_Castle_ObjectDecor_Pool_StrongbladeDLC01 &&
-                prefabGuid != Helper.TM_Castle_ObjectDecor_Pool_StrongbladeDLC02)
+                prefabGuid != Helper.TM_Castle_ObjectDecor_Pool_StrongbladeDLC02 &&
+                prefabGuid != Helper.TM_LiquidStation_Water_Well01 &&
+                prefabGuid != Helper.TM_LiquidStation_Water_Well03)
                 continue;
             if (!entity.Has<NameableInteractable>()) continue;
             if (entity.Read<NameableInteractable>().Name.Value != MyPluginInfo.PLUGIN_NAME) continue;
