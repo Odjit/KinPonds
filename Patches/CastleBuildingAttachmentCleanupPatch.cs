@@ -37,5 +37,6 @@ static class CastleBuildingAttachmentCleanupPatch
             var networkId = entity.Read<NetworkId>();
             Core.Ponds.RemovePond(networkId);
         }
+        destroyingEntities.Dispose();
     }
 }

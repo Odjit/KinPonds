@@ -33,6 +33,7 @@ internal class ItemParameterConverter : CommandArgumentConverter<ItemParameter>
                     itemCache[ingameName] = prefabGuid;
             }
         }
+        prefabs.Dispose();
     }
 
     public override ItemParameter Parse(ICommandContext ctx, string input)
@@ -173,7 +174,7 @@ internal class ItemParameterConverter : CommandArgumentConverter<ItemParameter>
         {
             var sb = new StringBuilder();
             sb.AppendLine("Multiple results be more specific:<color=#fff>");
-            foreach (var (prefabGuid, matches) in searchResults)
+            foreach (var (prefabGuid, matches) in resultsFromFirstSplit)
             {
                 var matchesText = string.Join("</color> or <color=#fff>", matches);
                 if (sb.Length + matchesText.Length + lengthOfFail >= MAX_REPLY_LENGTH)

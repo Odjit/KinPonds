@@ -8,6 +8,7 @@ using ProjectM.Terrain;
 using Stunlock.Core;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -27,9 +28,9 @@ class PondService
     static readonly PrefabGUID DT_Fish_Silverlight_Standard_01 = new PrefabGUID(711437197);
     static readonly PrefabGUID DT_Fish_StrongBlade_Standard_01 = new PrefabGUID(1670470961);
 
-    Dictionary<NetworkId, Entity> ponds = [];
+    Dictionary<NetworkId, (Entity pond, int territoryId)> ponds = [];
     HashSet<Entity> pondsAdded = [];
-    Dictionary<int, int> pondsPerTerritory = [];
+    Dictionary<int, List<(Entity pond, NetworkId networkId)>> pondsPerTerritory = [];
 
     Dictionary<WorldRegionType, PrefabGUID> regionDropTables = new Dictionary<WorldRegionType, PrefabGUID>()
     {
@@ -61,9 +62,9 @@ class PondService
     internal static void InitializeConfiguration(ConfigFile config, ManualLogSource log)
     {
         PondCostItemGuid = config.Bind("Pond Creation", "PondCostItemGuid", 0, 
-            "PrefabGUID of the item required to create a pondEntity. Set to 0 to disable cost.");
+            "PrefabGUID of the item required to create a pondEntry. Set to 0 to disable cost.");
         PondCostAmount = config.Bind("Pond Creation", "PondCostAmount", 0, 
-            "Amount of the item required to create a pondEntity. Set to 0 to disable cost.");
+            "Amount of the item required to create a pondEntry. Set to 0 to disable cost.");
 
         RespawnTimeMin = config.Bind("Fish Respawn", "RespawnTimeMin", 180f, 
             "Minimum time in seconds before a fish respawns after being caught");
@@ -133,15 +134,15 @@ class PondService
     IEnumerator DelayCheckForSpawning()
     {
         yield return new WaitForSeconds(1);
-        foreach (var pond in ponds.Values)
+        foreach (var pondEntry in ponds.Values)
         {
-            if (!pond.Has<AttachedBuffer>())
+            if (!pondEntry.pond.Has<AttachedBuffer>())
             {
                 Core.Log.LogInfo("Missing AttachedBuffer?");
                 continue;
             }
             var hasFish = false;
-            var attachedBuffer = Core.EntityManager.GetBuffer<AttachedBuffer>(pond);
+            var attachedBuffer = Core.EntityManager.GetBuffer<AttachedBuffer>(pondEntry.pond);
             foreach (var attached in attachedBuffer)
             {
                 if (attached.PrefabGuid == Char_Fish_General)
@@ -153,7 +154,7 @@ class PondService
 
             if (!hasFish)
             {
-                SpawnFish(pond);
+                SpawnFish(pondEntry.pond);
             }
         }
     }
@@ -169,15 +170,26 @@ class PondService
         if (territoryEntity == Entity.Null) return 0;
         
         var territoryId = territoryEntity.Read<CastleTerritory>().CastleTerritoryIndex;
-        pondsPerTerritory.TryGetValue(territoryId, out var count);
+        if (!pondsPerTerritory.TryGetValue(territoryId, out var pondsInTerritory)) return 0;
+
+        var count = 0;
+        foreach (var pondEntry in pondsInTerritory)
+        {
+            if (!Core.EntityManager.Exists(pondEntry.pond))
+            {
+                RemovePond(pondEntry.networkId);
+                continue;
+            }
+
+            count += 1;
+        }
+
         return count;
     }
 
     public void AddPond(Entity pondEntity)
     {
         var networkId = pondEntity.Read<NetworkId>();
-        ponds[networkId] = pondEntity;
-        pondsAdded.Add(pondEntity);
 
         var castleHeart = pondEntity.Read<CastleHeartConnection>().CastleHeartEntity.GetEntityOnServer();
         if (castleHeart == Entity.Null) return;
@@ -186,21 +198,26 @@ class PondService
         if (territoryEntity == Entity.Null) return;
         
         var territoryId = territoryEntity.Read<CastleTerritory>().CastleTerritoryIndex;
-        
-        var count = 0;
-        pondsPerTerritory.TryGetValue(territoryId, out count);
-        count++;
-        pondsPerTerritory[territoryId] = count;
 
+
+        ponds[networkId] = (pondEntity, territoryId);
+        pondsAdded.Add(pondEntity);
+
+        if (!pondsPerTerritory.TryGetValue(territoryId, out var pondsInTerritory))
+        {
+            pondsInTerritory = [];
+            pondsPerTerritory[territoryId] = pondsInTerritory;
+        }
+        pondsInTerritory.Add((pondEntity, networkId));
     }
 
     public void RemovePond(NetworkId networkId)
     {
-        if (!ponds.TryGetValue(networkId, out var pondEntity)) return;
-        pondsAdded.Remove(pondEntity);
+        if (!ponds.TryGetValue(networkId, out var pondEntry)) return;
+        pondsAdded.Remove(pondEntry.pond);
         ponds.Remove(networkId);
 
-        var castleHeart = pondEntity.Read<CastleHeartConnection>().CastleHeartEntity.GetEntityOnServer();
+        var castleHeart = pondEntry.pond.Read<CastleHeartConnection>().CastleHeartEntity.GetEntityOnServer();
         if (castleHeart == Entity.Null) return;
 
         var territoryEntity = castleHeart.Read<CastleHeart>().CastleTerritoryEntity;
@@ -208,25 +225,24 @@ class PondService
 
         var territoryId = territoryEntity.Read<CastleTerritory>().CastleTerritoryIndex;
 
-        var count = 0;
-        pondsPerTerritory.TryGetValue(territoryId, out count);
-        count--;
-        pondsPerTerritory[territoryId] = Mathf.Max(count, 0);
+        if (!pondsPerTerritory.TryGetValue(territoryId, out var pondsInTerritory)) return;
+
+        pondsInTerritory.RemoveAll(p => p.networkId == networkId);
     }
 
     public Entity GetPond(NetworkId networkId)
     {
-        if (ponds.TryGetValue(networkId, out var entity))
+        if (ponds.TryGetValue(networkId, out var entry))
         {
-            return entity;
+            return entry.pond;
         }
         return Entity.Null;
     }
 
     public string CreatePond(Entity charEntity, Entity userEntity, Entity pondEntity, bool isAdmin)
     {
-        if (pondEntity == Entity.Null) return "Invalid pool pondEntity";
-        if (!pondEntity.Has<NetworkId>()) return "Pool pondEntity has no NetworkId";
+        if (pondEntity == Entity.Null) return "Invalid pool";
+        if (!pondEntity.Has<NetworkId>()) return "Pool has no NetworkId";
 
         var networkId = pondEntity.Read<NetworkId>();
         if (ponds.ContainsKey(networkId)) return "Pond already exists in the pool.";
@@ -334,7 +350,7 @@ class PondService
         DropTable.Value = newDropTable.GuidHash;
 
         // Change existing fish drop tables
-        foreach (var pond in ponds.Values)
+        foreach (var pond in pondsAdded)
         {
             // Ignore overridden ponds
             if (pond.Has<DropTableBuffer>()) continue;
@@ -448,7 +464,15 @@ class PondService
         yield return new WaitForSeconds(timeToWait);
 
         if (!pondsAdded.Contains(pondEntity)) yield break;
-        if (!Core.EntityManager.Exists(pondEntity)) yield break;
+        if (!Core.EntityManager.Exists(pondEntity))
+        {
+            // Find the pond networkId
+            var networkId = ponds.Where(p => p.Value.pond == pondEntity)
+                                 .Select(p => p.Key)
+                                 .FirstOrDefault();
+            RemovePond(networkId);
+            yield break;
+        }
 
         SpawnFish(pondEntity);
     }

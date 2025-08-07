@@ -65,5 +65,8 @@ Server admins can configure:
 ### Additional Notes
 - If a droptable's first layer of drops does not add up to 100%, the rest is the chance of no reward.
 - Updating the global droptable will effect all globally set ponds. It will not change overridden ponds.
+- Starting a dismantle or fully dismantling a pond will remove the fishing spot and pond status.
+- Ponds will be destroyed with castle relocation and will not relocate.
+- Want to change permissions on any command? Use [VRoles](https://thunderstore.io/c/v-rising/p/odjit/VRoles/} to allow or prevent any command to players!
 
 This mod is licensed under the AGPL-3.0 license.

@@ -35,7 +35,7 @@ static class CommandContextExtensions
     {
         var pages = new List<string>();
         var page = new StringBuilder();
-        var rawLines = rawText.Split(Environment.NewLine); // todo: does this work on both platofrms?
+        var rawLines = rawText.Split(Environment.NewLine);
         var lines = new List<string>();
 
         // process rawLines -> lines of length <= pageSize

@@ -48,7 +48,6 @@ static class PlaceTileModelSystemPatch
             if (!pondEntity.Has<NameableInteractable>()) continue;
             if (pondEntity.Read<NameableInteractable>().Name.Value != MyPluginInfo.PLUGIN_NAME) continue;
 
-
             var attachedBuffer = Core.EntityManager.GetBuffer<AttachedBuffer>(pondEntity);
             foreach (var attached in attachedBuffer)
             {
@@ -76,4 +75,5 @@ static class PlaceTileModelSystemPatch
         }
         offsets.Clear();
     }
+
 }

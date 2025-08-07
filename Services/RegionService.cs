@@ -36,15 +36,18 @@ internal class RegionService
 		{
 			var wrp = worldRegionPolygonEntity.Read<WorldRegionPolygon>();
 			var vertices = Core.EntityManager.GetBuffer<WorldRegionPolygonVertex>(worldRegionPolygonEntity);
+            var nativeVertices = vertices.ToNativeArray(allocator: Allocator.Temp);
 
-			regionPolygons.Add(
+            regionPolygons.Add(
 				new RegionPolygon
 				{
 					Region = wrp.WorldRegion,
 					Aabb = wrp.PolygonBounds,
-					Vertices = vertices.ToNativeArray(allocator: Allocator.Temp).ToArray().Select(x => x.VertexPos).ToArray()
+					Vertices = nativeVertices.ToArray().Select(x => x.VertexPos).ToArray()
 				});
-		}
+            nativeVertices.Dispose();
+
+        }
         worldRegionPolygons.Dispose();
         eq.Dispose();
     }
