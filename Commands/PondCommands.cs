@@ -150,7 +150,14 @@ class PondCommands
         var pond = FindClosestPool(aimPos);
         if (pond == Entity.Null)
         {
-            ctx.Reply("<color=#DB8>No pond found");
+            ctx.Reply("<color=#DB8>No pool found");
+            return;
+        }
+
+        if (pond.Has<NameableInteractable>() &&
+            pond.Read<NameableInteractable>().Name.Value != MyPluginInfo.PLUGIN_NAME)
+        {
+            ctx.Reply("<color=#DB8>This pool is not a pond.");
             return;
         }
 
@@ -172,7 +179,7 @@ class PondCommands
     }
 
     //[Command("pond generatewiki", description: "Generates wiki of all the droptables", adminOnly: true)]
-    public static void GenerateWiki(ChatCommandContext ctx)
+    static void GenerateWiki(ChatCommandContext ctx)
     {
         ctx.Reply("<color=#DB8>Generating markdown droptables for GitHub Wiki!");
         var dropTables = new Dictionary<string, string>();
