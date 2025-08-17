@@ -323,8 +323,10 @@ class PondService
         fishEntity.Add<Attach>()
                   .Write(attach);
 
-        fishEntity.Remove<DestroyAfterDuration>();
-        
+        var dad = fishEntity.Read<DestroyAfterDuration>();
+        dad.Duration = float.MaxValue;
+        fishEntity.Write(dad);
+
         PrefabGUID dropTableToUse;
         if (pondEntity.Has<DropTableBuffer>())
         {
