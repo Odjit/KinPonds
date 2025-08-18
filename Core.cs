@@ -14,7 +14,9 @@ internal static class Core
 {
     static World server;
     public static World Server => GetServer();
-    public static GenerateCastleSystem GenerateCastle { get; private set; }
+
+    static GenerateCastleSystem generateCastleSystem;
+    public static GenerateCastleSystem GenerateCastle => generateCastleSystem ??= Server.GetExistingSystemManaged<GenerateCastleSystem>();
     public static PrefabCollectionSystem PrefabCollectionSystem { get; } = Server.GetExistingSystemManaged<PrefabCollectionSystem>();
 
     public static LocalizationService Localization { get; } = new();
@@ -36,7 +38,6 @@ internal static class Core
 	internal static void InitializeAfterLoaded()
 	{
 		if (_hasInitialized) return;
-        GenerateCastle = Server.GetOrCreateSystemManaged<GenerateCastleSystem>();
 
         Ponds = new();
         Region = new();

@@ -17,8 +17,9 @@ class Helper
 
     public static Entity FindClosestPool(Vector3 pos)
     {
-        var spatialData = Core.GenerateCastle._TileModelLookupSystemData;
-        var tileModelSpatialLookupRO = spatialData.GetSpatialLookupReadOnlyAndComplete(Core.GenerateCastle);
+        var generateCastle = Core.GenerateCastle;
+        var spatialData = generateCastle._TileModelLookupSystemData;
+        var tileModelSpatialLookupRO = spatialData.GetSpatialLookupReadOnlyAndComplete(generateCastle);
 
         var gridPos = ConvertPosToTileGrid(pos);
         var bounds = new BoundsMinMax((int)(gridPos.x - 2.5), (int)(gridPos.z - 2.5),
