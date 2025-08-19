@@ -154,7 +154,7 @@ class PondCommands
             return;
         }
 
-        if (pond.Has<NameableInteractable>() &&
+        if (!pond.Has<NameableInteractable>() || pond.Has<NameableInteractable>() &&
             pond.Read<NameableInteractable>().Name.Value != MyPluginInfo.PLUGIN_NAME)
         {
             ctx.Reply("<color=#DB8>This pool is not a pond.");
