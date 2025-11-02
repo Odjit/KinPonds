@@ -11,7 +11,9 @@ public static class InitializationPatch
 	[HarmonyPostfix]
 	public static void OneShot_AfterLoad_InitializationPatch()
 	{
+		if (!Core.IsServer) return;
+		
 		Core.InitializeAfterLoaded();
-        Plugin.Harmony.Unpatch(typeof(SceneSectionStreamingSystem).GetMethod("ShutdownAsynchrnonousStreamingSupport"), typeof(InitializationPatch).GetMethod("OneShot_AfterLoad_InitializationPatch"));
+        Plugin.Harmony?.Unpatch(typeof(SceneSectionStreamingSystem).GetMethod("ShutdownAsynchrnonousStreamingSupport"), typeof(InitializationPatch).GetMethod("OneShot_AfterLoad_InitializationPatch"));
     }
 }

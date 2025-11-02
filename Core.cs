@@ -14,6 +14,7 @@ internal static class Core
 {
     static World server;
     public static World Server => GetServer();
+    public static bool IsServer => Application.productName == "VRisingServer";
 
     static GenerateCastleSystem generateCastleSystem;
     public static GenerateCastleSystem GenerateCastle => generateCastleSystem ??= Server.GetExistingSystemManaged<GenerateCastleSystem>();

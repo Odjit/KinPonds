@@ -3,6 +3,7 @@ using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using KinPonds.Services;
+using UnityEngine;
 using VampireCommandFramework;
 
 namespace KinPonds;
@@ -18,6 +19,9 @@ public class Plugin : BasePlugin
 
     public override void Load()
     {
+        if (Application.productName != "VRisingServer")
+            return;
+
         // Plugin startup logic
         Log.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} version {MyPluginInfo.PLUGIN_VERSION} is loaded!");
         LogInstance = Log;

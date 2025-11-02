@@ -40,7 +40,12 @@ class PondService
         { WorldRegionType.Gloomrot_South, DT_Fish_Gloomrot_Standard_01 },
         { WorldRegionType.Gloomrot_North, DT_Fish_Gloomrot_Standard_01 },
         { WorldRegionType.CursedForest, DT_Fish_Cursed_Standard_01 },
-        { WorldRegionType.Strongblade, DT_Fish_StrongBlade_Standard_01 }
+        { WorldRegionType.Strongblade, DT_Fish_StrongBlade_Standard_01 },
+        { WorldRegionType.None, DT_Fish_Farbane_Standard_01 },
+        { WorldRegionType.StartCave, DT_Fish_Farbane_Standard_01 },
+        { WorldRegionType.HallowedMountains, DT_Fish_Dunley_Standard_01 },
+        { WorldRegionType.RuinsOfMortium, DT_Fish_Cursed_Standard_01 },
+        { WorldRegionType.Other, DT_Fish_Farbane_Standard_01 }
     };
 
     Entity fishPrefab;
