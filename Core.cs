@@ -17,7 +17,7 @@ internal static class Core
     public static bool IsServer => Application.productName == "VRisingServer";
 
     static GenerateCastleSystem generateCastleSystem;
-    public static GenerateCastleSystem GenerateCastle => generateCastleSystem ??= Server.GetExistingSystemManaged<GenerateCastleSystem>();
+    public static GenerateCastleSystem GenerateCastle => generateCastleSystem ??= Server.GetOrCreateSystemManaged<GenerateCastleSystem>();
     public static PrefabCollectionSystem PrefabCollectionSystem { get; } = Server.GetExistingSystemManaged<PrefabCollectionSystem>();
 
     public static LocalizationService Localization { get; } = new();
@@ -65,7 +65,7 @@ internal static class Core
     {
         if (monoBehaviour == null)
         {
-            var go = new GameObject("KindredCommands");
+            var go = new GameObject("KinPonds");
             monoBehaviour = go.AddComponent<IgnorePhysicsDebugSystem>();
             Object.DontDestroyOnLoad(go);
         }
